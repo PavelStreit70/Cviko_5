@@ -114,12 +114,27 @@ RA %>%
 # Nactete data data_examples.xlsx, list "qPCR". 
 
 library(readxl)
-data_examples_1_ <- read_excel("data_examples (1).xlsx", 
-                               sheet = "qPCR")
-View(data_examples_1_)
+C <- read_excel("data_examples (1).xlsx", sheet = "qPCR")
+View(C)
 
-# Seradte si faktory dle obrazku, viz minule cviceni. 
-# Otestujte, zda existuji rozdily v hodnotach exprese mezi ruznymi kondicemi u ruznych genu.  
+# Seradte si faktory dle obrazku, viz minule cviceni.
+
+C <- C %>% 
+  mutate(
+    Condition = factor(Condition, levels = c("wt", "#1", "#2", "#3")),
+    Gene = factor(Gene, levels = c("Prickle1", "Fzd2", "Wnt9a")))
+
+# Otestujte, zda existuji rozdily v hodnotach exprese mezi ruznymi kondicemi u ruznych genu.
+
+boxplot(Expression ~ Condition * Gene,C)
+boxplot(log(Expression) ~ Condition * Gene, data = C)
+mod <- aov(Expression ~ Condition * Gene,C)
+summary(mod)
+
+TukeyHSD(mod)
+TukeyHSD(mod, "Gene")
+TukeyHSD(mod, "Condition")
+
 # Vypočítejte popisné statistiky hodnoceného parametru ve srovnávaných skupinách. 
 
 
