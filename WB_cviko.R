@@ -26,12 +26,12 @@ View(WB)
 #WB <- WB %>% 
 #  mutate(Conditon = factor(gsub("Condition_", "",Condition)))
 
-WB <- WB %>% 
+WB <- WB %>% #Potřeba vysvětlit!
   pivot_longer(Condition_1:Condition_6, names_to = "Condition", values_to = "WB") %>% 
   separate(Condition, into = c("del", "Condition"), sep = "_", convert = TRUE) %>% 
   dplyr::select(-del)
 
-WB <- WB %>% 
+WB <- WB %>% #Potřeba vysvětlit!
   mutate(Condition = as.factor(Condition), 
          Replicate = as.factor(Replicate))
 
@@ -47,6 +47,14 @@ tapply(WB$WB, WB$Condition, function (x) shapiro.test(x)$p.value)
 
 leveneTest(WB ~ factor(Condition), WB) 
 
+# data sice nejsou dokonale symetricky rozlozena, ale vzhledem k nizkemu N volime parametricke metody 
+
+# ANOVA 
+
+a <- aov(WB ~ Condition, WB)  
+summary(a) 
+TukeyHSD(a) 
+
 # Vypočítejte popisné statistiky (např. průměr, SD, medián) hodnoceného parametru ve srovnávaných skupinách.
 
 WB %>% 
@@ -60,13 +68,56 @@ WB %>%
 #### UKOL 2: 
 # Nactete data data_examples.xlsx, list "reporter assay". 
 
-# Otestujte, zda existuji rozdily v hodnotach Ratio mezi ruznymi kondicemi? 
-# Nezapomente na overeni predpokladu. 
+library(readxl)
+RA <- read_excel("data_examples (1).xlsx", sheet = "reporter assay")
+View(RA)
+RA <- RA %>% mutate(
+  Condition = factor(Condition))
+
+# Otestujte, zda existuji rozdily v hodnotach Ratio mezi ruznymi kondicemi?
+
+plot(Ratio ~ Condition, RA)
+
+#ANOVA tu není vhodná, nutné otestování jinými testy
+
+# Nezapomente na overeni predpokladu.
+
+kruskal.test(Ratio ~ Condition, RA)
+pairwise.wilcox.test(RA$Ratio,RA$Condition, p.adjust.method = "")
+
+RA %>% 
+  filter(Condition == 1) %>% 
+  t.test(Ratio ~ 1, mu = 1, data = .)
+
+RA %>% 
+  filter(Condition == 3) %>% 
+  t.test(Ratio ~ 1, mu = 1, data = .)
+
+t1$p.value
+t2$p.value
+
+#p_values <- c(t1$p.value, t2$p.value)
+
+#p.adjust(c(t1$p.value), t2$p.value), method = "bonferroni")
+
 # Vypočítejte popisné statistiky hodnoceného parametru ve srovnávaných skupinách. 
+
+RA %>% 
+  group_by(Condition) %>% 
+  summarise(
+    RA_mean = mean(Ratio), 
+    RA_sd = sd(Ratio), 
+    RA_median = median(Ratio))
 
 
 #### UKOL 3: 
 # Nactete data data_examples.xlsx, list "qPCR". 
+
+library(readxl)
+data_examples_1_ <- read_excel("data_examples (1).xlsx", 
+                               sheet = "qPCR")
+View(data_examples_1_)
+
 # Seradte si faktory dle obrazku, viz minule cviceni. 
 # Otestujte, zda existuji rozdily v hodnotach exprese mezi ruznymi kondicemi u ruznych genu.  
 # Vypočítejte popisné statistiky hodnoceného parametru ve srovnávaných skupinách. 
