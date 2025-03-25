@@ -78,12 +78,12 @@ RA <- RA %>% mutate(
 
 plot(Ratio ~ Condition, RA)
 
-#ANOVA tu není vhodná, nutné otestování jinými testy
+#ANOVA tu není vhodná, nutné otestování jinými testy...níže
 
 # Nezapomente na overeni predpokladu.
 
 kruskal.test(Ratio ~ Condition, RA)
-pairwise.wilcox.test(RA$Ratio,RA$Condition, p.adjust.method = "")
+pairwise.wilcox.test(RA$Ratio,RA$Condition, p.adjust.method = "BH")
 
 RA %>% 
   filter(Condition == 1) %>% 
@@ -96,9 +96,9 @@ RA %>%
 t1$p.value
 t2$p.value
 
-#p_values <- c(t1$p.value, t2$p.value)
+p_values <- c(t1$p.value, t2$p.value)
 
-#p.adjust(c(t1$p.value), t2$p.value), method = "bonferroni")
+p.adjust(c(t1$p.value), t2$p.value), method = "bonferroni")
 
 # Vypočítejte popisné statistiky hodnoceného parametru ve srovnávaných skupinách. 
 
@@ -137,6 +137,10 @@ TukeyHSD(mod, "Condition")
 
 # Vypočítejte popisné statistiky hodnoceného parametru ve srovnávaných skupinách. 
 
+C %>% group_by(Condition, Gene) %>% 
+  summarise(expr_mean = mean(Expression), 
+            expr_sd = sd(Expression),
+            expr_median = median(Expression))
 
 #### UKOL 4: 
 # Nactete data data_examples.xlsx, list "immunofluorescence". 
