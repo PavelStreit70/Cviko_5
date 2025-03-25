@@ -93,12 +93,40 @@ RA %>%
   filter(Condition == 3) %>% 
   t.test(Ratio ~ 1, mu = 1, data = .)
 
-t1$p.value
-t2$p.value
+#t1$p.value
+#t2$p.value
 
+#p_values <- c(t1$p.value, t2$p.value)
+
+#p.adjust(c(t1$p.value), t2$p.value), method = "bonferroni")
+
+#Opravený kód
+
+# Kruskal-Wallis test
+kruskal.test(Ratio ~ Condition, RA)
+
+# Párové Wilcoxonovy testy s BH korekcí
+
+pairwise.wilcox.test(RA$Ratio, RA$Condition, p.adjust.method = "BH")
+
+# T-test pro Condition == 1
+t1 <- RA %>% 
+  filter(Condition == 1) %>% 
+  t.test(Ratio ~ 1, mu = 1, data = .)
+
+# T-test pro Condition == 3
+t2 <- RA %>% 
+  filter(Condition == 3) %>% 
+  t.test(Ratio ~ 1, mu = 1, data = .)
+
+# Extrakce p-hodnot
 p_values <- c(t1$p.value, t2$p.value)
 
-p.adjust(c(t1$p.value), t2$p.value), method = "bonferroni")
+# Bonferroniho korekce
+p_adjusted <- p.adjust(p_values, method = "bonferroni")
+
+# Výstup opraveného kódu
+p_adjusted
 
 # Vypočítejte popisné statistiky hodnoceného parametru ve srovnávaných skupinách. 
 
@@ -145,13 +173,28 @@ C %>% group_by(Condition, Gene) %>%
 #### UKOL 4: 
 # Nactete data data_examples.xlsx, list "immunofluorescence". 
 
-# Otestujte, zda se lisi frekvence u ruznych kondic. 
-# Napoveda: pracujte pouze s "axis.duplication", hodnota "normal je doplnek do 100 %. 
-# Jakeho typu je vstupni promenna. Zvolte spravny test.  
+library(readxl)
+D <- read_excel("data_examples (1).xlsx", sheet = "immunofluorescence")
+View(D)
+str(D)
 
+# Otestujte, zda se lisi frekvence u ruznych kondic.
+# Napoveda: pracujte pouze s "axis.duplication", hodnota "normal je doplnek do 100 %.
+
+barplot(axis.duplication ~ Condition, data = D)
+
+# Jakeho typu je vstupni promenna (kategoriální) Zvolte spravny test (fischerův nebo chí sq)
+
+freq_table <- table(D$axis.duplication)
+chisq.test(freq_table)
+
+chisq.test(D$axis.duplication)
 
 
 ### PRO RYCHLIKY: 
+
+
+
 # Vyberte vhodny test pro hodnoceni dat na listu "immunofluorescence B". 
 # Aplikujte ho. 
 # Vysledky interpretujte. 
