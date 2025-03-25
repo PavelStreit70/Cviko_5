@@ -190,14 +190,60 @@ chisq.test(freq_table)
 
 chisq.test(D$axis.duplication)
 
-
 ### PRO RYCHLIKY: 
-
-
-
 # Vyberte vhodny test pro hodnoceni dat na listu "immunofluorescence B". 
 # Aplikujte ho. 
+
+library(readxl)
+E <- read_excel("data_examples (1).xlsx", sheet = "immunofluorescence B")
+View(E)
+
+chisq.test(E %>% select(-Condition))
+
+#Nebo takto - vychází stejně
+
+# Vytvoření matice četností (kontingenční tabulky)
+freq_table <- as.matrix(RA[, 2:4])  # Sloupce wt, mild, severe
+
+# Nastavení názvů řádků (podmínky)
+rownames(freq_table) <- RA$Condition
+
+# Chí-kvadrát test
+chisq.test(freq_table)
+
+chisq.residuals <- chisq.test(freq_table)$residuals
+print(chisq.residuals)
+
+#Graficky
+
+E_long <- E %>% 
+  pivot_longer(cols = c(wt, mild, severe), names_to = "group") 
+  barplot(value ~ group + Condition, data = E_long)
+
+
+############  
+# Předpokládáme, že E_long je již vytvořený v dlouhém formátu
+  
+  E_long <- E %>% 
+    pivot_longer(cols = c(wt, mild, severe), names_to = "group")
+  
+# Vytvoření matice pro barplot
+  
+  barplot_matrix <- tapply(E_long$value, list(E_long$group, E_long$Condition), sum)
+  
+#Vytvoření barplotu
+  
+  barplot(barplot_matrix, beside = TRUE, col = c("blue", "orange", "red"), 
+          legend.text = colnames(barplot_matrix), args.legend = list(title = "Condition"))
+  
+# Přidání názvů a popisků
+  
+  title(main = "Bar Plot of Groups by Condition", xlab = "Group", ylab = "Value")
+
 # Vysledky interpretujte. 
+
+#Rozdíl mezi očekávanými a skutečnými četnostmi
+#Statisticky významný rozdíl - skupiny se mezi sebou liší
 
 
 
