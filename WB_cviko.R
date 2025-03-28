@@ -4,6 +4,13 @@ library(dplyr)
 library(tidyr)
 library(nortest)  # normality testing 
 library(car) # Levene test
+library(readxl)
+library(lme4) # lmer
+library(lmerTest)
+library(multcomp) # Attaching package: ‘MASS’, dplyr::select masked
+library(emmeans) # emmeans
+library(effects) # allEffects
+library(ggplot2)
 
 #Načtení dat
 
@@ -63,7 +70,33 @@ WB %>%
     WB_mean = mean(WB), 
     WB_sd = sd(WB), 
     WB_median = median(WB))
- 
+
+# Aplikujte ekvivalentní lineární model. 
+
+b <- lm(WB ~ Condition, WB)  
+summary(b) 
+summary(glht(b))  # adjustovane p-hodnoty 
+emmeans(b, pairwise ~ Condition)
+
+# Jsou mereni nezavisla? Overte graficky.
+
+boxplot(WB ~ Replicate, WB)
+boxplot(WB ~ Replicate + Condition, WB)
+
+# Pokud nejsou nezavisla, modifikujte model
+
+c <- lmer(WB ~ Condition + (1|Replicate), WB) 
+
+#Srovnání modelů pomocí AIC
+
+AIC(WB,c)
+
+#Zbytek
+
+anova(c)
+summary(c)
+summary(glht(c))
+emmeans(c, pairwise ~ Condition)
 
 #### UKOL 2: 
 # Nactete data data_examples.xlsx, list "reporter assay". 
@@ -137,6 +170,25 @@ RA %>%
     RA_sd = sd(Ratio), 
     RA_median = median(Ratio))
 
+# Aplikujte dva samostatné ekvivalentní lineární modely. 
+
+fit1 = lm(Ratio -1 ~ 1, data = RA[RA$Condition %in% c(1),])   
+summary(fit1) 
+fit3 = lm(Ratio -1 ~ 1, data = RA[RA$Condition %in% c(3),])   
+summary(fit3) 
+
+names(summary(fit1))
+summary(fit1)$coefficients[4]
+summary(fit3)$coefficients[4]
+
+p <- c(
+  summary(fit1)$coefficients[4], 
+  summary(fit3)$coefficients[4])
+
+# a korekce viz vyse  
+
+p_adj = p.adjust(p, method = "bonferroni", n = length(p))
+p; p_adj
 
 #### UKOL 3: 
 # Nactete data data_examples.xlsx, list "qPCR". 
@@ -162,6 +214,34 @@ summary(mod)
 TukeyHSD(mod)
 TukeyHSD(mod, "Gene")
 TukeyHSD(mod, "Condition")
+
+# nesplněna homogenity rozptylů, klasický Kruskal-Walis test nepracuje se dvěma faktory vyřešíme příště modely 
+# Aplikujte ekvivalentní lineární model. 
+
+b <- lm(Expression ~ Gene * Condition, C)
+anova(b)
+summary(glht(b))
+emmeans(b, pairwise ~ Gene)
+emmeans(b, pairwise ~ Condition)
+emmeans(b, pairwise ~ Gene * Condition)
+emmeans(b, consec ~ Gene * Condition)
+emmeans(b, consec ~ Condition * Gene)
+
+names(emmeans(b, pairwise ~ Gene * Condition))
+emmeans(b, pairwise ~ Gene * Condition)$contrasts %>% 
+  as.data.frame() %>% filter(p.value < 0.05)
+
+# Jsou mereni v ruznych replikatech nezavisla? Overte graficky. 
+# Pokud je to treba modifikujte model. 
+
+boxplot(Expression ~ Gene + Replicate, C, las = 2)
+boxplot(Expression ~ Condition + Replicate, C, las = 2)
+
+# lmer model 
+c <- lmer(Expression ~ Gene * Condition + (1|Replicate), C)
+anova(c)
+summary(glht(c))
+emmeans(c, pairwise ~ Gene * Condition)
 
 # Vypočítejte popisné statistiky hodnoceného parametru ve srovnávaných skupinách. 
 
@@ -189,6 +269,8 @@ freq_table <- table(D$axis.duplication)
 chisq.test(freq_table)
 
 chisq.test(D$axis.duplication)
+
+# Aplikujte ekvivalentní lineární model včetně post-hoc testů. 
 
 ### PRO RYCHLIKY: 
 # Vyberte vhodny test pro hodnoceni dat na listu "immunofluorescence B". 
@@ -219,9 +301,11 @@ print(chisq.residuals)
 E_long <- E %>% 
   pivot_longer(cols = c(wt, mild, severe), names_to = "group") 
   barplot(value ~ group + Condition, data = E_long)
+  
+# Aplikujte ekvivalentní zobecněný lineární model včetně post-hoc testů.
 
 
-############  
+############  řešení pro Rychlíky z ChatGPT
 # Předpokládáme, že E_long je již vytvořený v dlouhém formátu
   
   E_long <- E %>% 
